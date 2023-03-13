@@ -3,6 +3,14 @@
     <output-path>$PROJECT_DIR$/out/artifacts/StringDeposit_jar</output-path>
     <root id="archive" name="StringDeposit.jar">
       <element id="module-output" name="StringDeposit" />
+      <element id="directory" name="lib">
+        <element id="dir-copy" path="$PROJECT_DIR$/target" />
+        <element id="dir-copy" path="$PROJECT_DIR$/target/classes" />
+        <element id="dir-copy" path="$PROJECT_DIR$/target/classes/META-INF" />
+        <element id="dir-copy" path="$PROJECT_DIR$/target/generated-sources" />
+        <element id="dir-copy" path="$PROJECT_DIR$/src/main" />
+        <element id="dir-copy" path="$PROJECT_DIR$/src" />
+      </element>
     </root>
   </artifact>
 </component>
