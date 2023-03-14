@@ -1,1 +1,0 @@
-start /B javaw -jar StringDeposit.jar
