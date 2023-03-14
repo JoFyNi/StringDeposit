@@ -19,9 +19,9 @@ public class depositGUI extends JFrame implements ActionListener {
     public File logFile = new File("log.txt");
     static Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
     private int rowCount = 1;
-
+    String version = System.getProperty("java.version");
     public depositGUI() {
-        setTitle("DEPO");
+        setTitle("DEPO      Version: " + version);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         depositPanel = new JPanel();
