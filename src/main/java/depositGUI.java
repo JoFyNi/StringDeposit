@@ -22,16 +22,16 @@ public class depositGUI extends JFrame implements ActionListener {
     String version = System.getProperty("java.version");
     public depositGUI() {
         setTitle("DEPO      Version: " + version);
+        setSize(440, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
         depositPanel = new JPanel();
-        depositPanel.setPreferredSize(new Dimension(800, 400));
+        depositPanel.setPreferredSize(new Dimension(440, 400));
         depositPanel.setLayout(new BorderLayout());
-        getContentPane().add(depositPanel, BorderLayout.SOUTH);
+        getContentPane().add(depositPanel, BorderLayout.CENTER);
         depositTableModel = new DefaultTableModel() {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column != 0; // allow editing only in columns 2-4
+                return column != 0; // allow editing only in columns 2
             }
         };
         String[] columns = {"#", "Content"};
@@ -63,9 +63,14 @@ public class depositGUI extends JFrame implements ActionListener {
         // Step 4: Set the depositTableModel as the model of the JTable
         depositTable = new JTable(depositTableModel);
         depositTable.setModel(depositTableModel);
-
         scrollPane = new JScrollPane(depositTable);
         depositPanel.add(scrollPane, BorderLayout.CENTER);
+        // AUTO_RESIZE_COLUMNS = off so that the table can be resized -> 20 / 400
+        depositTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        depositTable.getColumnModel().getColumn(0).setPreferredWidth(20);
+        depositTable.getColumnModel().getColumn(0).setWidth(20);
+        depositTable.getColumnModel().getColumn(1).setWidth(200);
+        depositTable.getColumnModel().getColumn(1).setPreferredWidth(400);
         // buttons
         addButton = new JButton("Add");
         saveButton = new JButton("Save");
@@ -87,8 +92,8 @@ public class depositGUI extends JFrame implements ActionListener {
         saveButton.addActionListener(this);
         deleteButton.addActionListener(this);
         copyButton.addActionListener(this);
-
-        pack();
+        // designe for the frame
+        getContentPane().setFont(new Font("Times New Roman", Font.PLAIN, 20));
         setLocationRelativeTo(null);
         setVisible(true);
     }
@@ -101,15 +106,19 @@ public class depositGUI extends JFrame implements ActionListener {
                 Object[] newRow = {Integer.toString(depositTableModel.getRowCount() + 1), ""};
                 depositTableModel.addRow(newRow);
                 rowCount++;
-            } else {
                 // update the row numbers
                 for (int i = selectedRow; i < depositTableModel.getRowCount(); i++) {
                     depositTableModel.setValueAt(i + 1, i, 0);
                 }
+            } else {
                 // insert a new row below the selected row
                 Object[] newRow = {Integer.toString(selectedRow + 2), ""};
                 depositTableModel.insertRow(selectedRow + 1, newRow);
                 rowCount++;
+                // update the row numbers
+                for (int i = selectedRow; i < depositTableModel.getRowCount(); i++) {
+                    depositTableModel.setValueAt(i + 1, i, 0);
+                }
             }
         } else if (e.getSource() == saveButton) {
             // save the content of the selected row
