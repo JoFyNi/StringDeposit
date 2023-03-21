@@ -12,17 +12,23 @@ import java.util.ArrayList;
 
 public class depositGUI extends JFrame implements ActionListener {
     public JPanel depositPanel;
+    public JTabbedPane tabbedPane;
     public JTable depositTable;
+    public JTable depositTableTwo;
+    public JTable depositTableThree;
     public DefaultTableModel depositTableModel;
-    public JScrollPane scrollPane;
+    public DefaultTableModel depositTableModelTwo;
+    public DefaultTableModel depositTableModelThree;
     public JButton addButton;
     public JButton saveButton;
     public JButton deleteButton;
     public JButton copyButton;
     public JButton openButton;
-    public File logFile = new File("log.txt");
+    public File logFileOne = new File("log1.txt");
+    public File logFileTwo = new File("log2.txt");
+    public File logFileThree = new File("log3.txt");
     static Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-    private int rowCount = 1;
+    private int rowCount = 0;
     String version = System.getProperty("java.version");
     public depositGUI() {
         setTitle("DEPO      Version: " + version);
@@ -38,45 +44,81 @@ public class depositGUI extends JFrame implements ActionListener {
                 return column != 0; // allow editing only in columns 2
             }
         };
-        String[] columns = {"#", "Name", "Link"};
-        // Step 2: Check if the log.txt file exists
-        if (!logFile.exists()) {
-            // If it doesn't, create an empty depositTableModel
-            depositTableModel = new DefaultTableModel(columns, 0);
-            if (depositTableModel.getRowCount() == 0) {
-                Object[] newRow = {"1", "", ""};
-                depositTableModel.addRow(newRow);
-                rowCount++;
+        depositTableModelTwo = new DefaultTableModel() {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column != 0; // allow editing only in columns 2
             }
-        } else {
-            try {
-                // Step 3: Read the data from the log.txt file and create a new depositTableModel
-                BufferedReader reader = new BufferedReader(new FileReader(logFile));
-                String line;
-                ArrayList<String[]> dataList = new ArrayList<>();
-                while ((line = reader.readLine()) != null) {
-                    String[] rowData = line.split(",");
-                    dataList.add(rowData);
-                }
-                reader.close();
-                depositTableModel = new DefaultTableModel(dataList.toArray(new Object[0][0]), columns);
-            } catch (IOException e) {
-                e.printStackTrace();
+        };
+        depositTableModelThree = new DefaultTableModel() {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column != 0; // allow editing only in columns 2
             }
+        };
+        // Thread safe initialization for safety tables checking
+        Thread thread1 = new Thread(() -> {
+            loadTableModelFromFile(logFileOne, depositTableModel);
+        });
+        Thread thread2 = new Thread(() -> {
+            loadTableModelFromFile(logFileTwo, depositTableModelTwo);
+        });
+        Thread thread3 = new Thread(() -> {
+            loadTableModelFromFile(logFileThree, depositTableModelThree);
+        });
+        thread1.start();
+        thread2.start();
+        thread3.start();
+        try {
+            // Warten Sie auf das Ende aller Threads, bevor Sie fortfahren
+            thread1.join();
+            thread2.join();
+            thread3.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        // Step 4: Set the depositTableModel as the model of the JTable
+        // Step 4: Set the depositTableModels as the model of the JTables
+        // first Table
         depositTable = new JTable(depositTableModel);
         depositTable.setModel(depositTableModel);
-        scrollPane = new JScrollPane(depositTable);
-        depositPanel.add(scrollPane, BorderLayout.CENTER);
         // AUTO_RESIZE_COLUMNS = off so that the table can be resized -> 20 / 400
         depositTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        depositTable.getColumnModel().getColumn(0).setPreferredWidth(20);
         depositTable.getColumnModel().getColumn(0).setWidth(20);
+        depositTable.getColumnModel().getColumn(0).setPreferredWidth(20);
         depositTable.getColumnModel().getColumn(1).setWidth(150);
         depositTable.getColumnModel().getColumn(1).setPreferredWidth(300);
         depositTable.getColumnModel().getColumn(2).setWidth(150);
         depositTable.getColumnModel().getColumn(2).setPreferredWidth(300);
+        //
+        // second Table
+        depositTableTwo = new JTable(depositTableModelTwo);
+        depositTableTwo.setModel(depositTableModelTwo);
+        // AUTO_RESIZE_COLUMNS = off so that the table can be resized -> 20 / 400
+        depositTableTwo.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        depositTableTwo.getColumnModel().getColumn(0).setWidth(20);
+        depositTableTwo.getColumnModel().getColumn(0).setPreferredWidth(20);
+        depositTableTwo.getColumnModel().getColumn(1).setWidth(150);
+        depositTableTwo.getColumnModel().getColumn(1).setPreferredWidth(300);
+        depositTableTwo.getColumnModel().getColumn(2).setWidth(150);
+        depositTableTwo.getColumnModel().getColumn(2).setPreferredWidth(300);
+        //
+        // third Table
+        depositTableThree = new JTable(depositTableModelThree);
+        depositTableThree.setModel(depositTableModelThree);
+        // AUTO_RESIZE_COLUMNS = off so that the table can be resized -> 20 / 400
+        depositTableThree.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        depositTableThree.getColumnModel().getColumn(0).setWidth(20);
+        depositTableThree.getColumnModel().getColumn(0).setPreferredWidth(20);
+        depositTableThree.getColumnModel().getColumn(1).setWidth(150);
+        depositTableThree.getColumnModel().getColumn(1).setPreferredWidth(300);
+        depositTableThree.getColumnModel().getColumn(2).setWidth(150);
+        depositTableThree.getColumnModel().getColumn(2).setPreferredWidth(300);
+        // add Table to Tab
+        tabbedPane = new JTabbedPane();
+        tabbedPane.addTab("One", new JScrollPane(depositTable));
+        tabbedPane.addTab("Two", new JScrollPane(depositTableTwo));
+        tabbedPane.addTab("Three", new JScrollPane(depositTableThree));
+        depositPanel.add(tabbedPane);
         // buttons
         addButton = new JButton("Add");
         saveButton = new JButton("Save");
@@ -108,80 +150,140 @@ public class depositGUI extends JFrame implements ActionListener {
         setVisible(true);
         buttons();
     }
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == addButton) {
-            int selectedRow = depositTable.getSelectedRow();
-            // add a new row at the end of the table if no row is selected
-            if (selectedRow == -1) {
-                Object[] newRow = {Integer.toString(depositTableModel.getRowCount() + 1), ""};
-                depositTableModel.addRow(newRow);
-                rowCount++;
-                // update the row numbers
-                for (int i = selectedRow; i < depositTableModel.getRowCount(); i++) {
-                    depositTableModel.setValueAt(i + 1, i, 0);
-                }
-            } else {
-                // insert a new row below the selected row
-                Object[] newRow = {Integer.toString(selectedRow + 2), ""};
-                depositTableModel.insertRow(selectedRow + 1, newRow);
-                rowCount++;
-                // update the row numbers
-                for (int i = selectedRow; i < depositTableModel.getRowCount(); i++) {
-                    depositTableModel.setValueAt(i + 1, i, 0);
-                }
-            }
-        } else if (e.getSource() == saveButton) {
-            // save the content of the selected row
+    public void loadTableModelFromFile(File logFile, DefaultTableModel tableModel) {
+        String[] columns = {"#", "Name", "Link"};
+        Object[] newRow = {"1", "", ""};
+        if (!logFile.exists()) {
+            // If it doesn't, create an empty depositTableModel
             try {
-                FileWriter writer = new FileWriter(logFile);
-                for (int i = 0; i < depositTableModel.getRowCount(); i++) {
-                    String row = "";
-                    for (int j = 0; j < depositTableModel.getColumnCount(); j++) {
-                        row += depositTableModel.getValueAt(i, j) + ",";
-                    }
-                    row = row.substring(0, row.length() - 1);
-                    writer.write(row + "\n");
+                logFile.createNewFile();
+                tableModel = new DefaultTableModel(columns, 0);
+                if (tableModel.getRowCount() == 0) {
+                    tableModel.addRow(newRow);
+                    rowCount++;
+                    tableModel.fireTableDataChanged();
                 }
-                writer.close();
-            } catch (IOException ex) {
-                ex.printStackTrace();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-        } else if (e.getSource() == deleteButton) {
-            // delete the selected row
-            int selectedRow = depositTable.getSelectedRow();
-            if (selectedRow != -1) {
-                depositTableModel.removeRow(selectedRow);
-                // update the row numbers
-                for (int i = selectedRow; i < depositTableModel.getRowCount(); i++) {
-                    depositTableModel.setValueAt(i + 1, i, 0);
+        } else {
+            try {
+                // Step 3: Read the data from the log.txt file and create a new depositTableModel
+                BufferedReader reader = new BufferedReader(new FileReader(logFile));
+                String line;
+                ArrayList<String[]> dataList = new ArrayList<>();
+                while ((line = reader.readLine()) != null) {
+                    String[] rowData = line.split(",");
+                    dataList.add(rowData);
                 }
-            }
-        } else if (e.getSource() == copyButton) {
-            // copy the content of the selected row
-            int selectedRow = depositTable.getSelectedRow();
-            if (selectedRow != -1) {
-                String content = (String) depositTableModel.getValueAt(selectedRow, 2);
-                copyToClipboard(content);
-            }
-        } else if (e.getSource() == openButton) {
-            // copy the content of the selected row
-            int selectedRow = depositTable.getSelectedRow();
-            if (selectedRow != -1) {
-                String selectedURL = (String) depositTable.getValueAt(selectedRow, 2);
-                Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
-                if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
-                    try {
-                        System.out.println(selectedURL);
-                        URI uri = new URI(selectedURL);
-                        desktop.browse(uri);
-                    } catch (Exception browserException) {
-                        browserException.printStackTrace();
-                    }
-                }
+                reader.close();
+                tableModel.addRow(newRow);
+                tableModel.setDataVector(dataList.toArray(new Object[0][0]), columns);
+
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        int selectedTabIndex = tabbedPane.getSelectedIndex();
+        if (e.getSource() == addButton) {
+            if (selectedTabIndex == 0) {
+                add(depositTable, depositTableModel);
+            } else if (selectedTabIndex == 1) {
+                add(depositTableTwo, depositTableModelTwo);
+            } else if (selectedTabIndex == 2) {
+                add(depositTableThree, depositTableModelThree);
+            }
+        } else if (e.getSource() == saveButton) {
+            saveTableModelToLogFile(depositTableModel, logFileOne);
+            saveTableModelToLogFile(depositTableModelTwo, logFileTwo);
+            saveTableModelToLogFile(depositTableModelThree, logFileThree);
+        } else if (e.getSource() == deleteButton) {
+            if (selectedTabIndex == 0) {
+                delete(depositTable, depositTableModel);
+            } else if (selectedTabIndex == 1) {
+                delete(depositTableTwo, depositTableModelTwo);
+            } else if (selectedTabIndex == 2) {
+                delete(depositTableThree, depositTableModelThree);
+            }
+        } else if (e.getSource() == copyButton) {
+            if (selectedTabIndex == 0) {
+                copy(depositTable, depositTableModel);
+            } else if (selectedTabIndex == 1) {
+                copy(depositTableTwo, depositTableModelTwo);
+            } else if (selectedTabIndex == 2) {
+                copy(depositTableThree, depositTableModelThree);
+            }
+        } else if (e.getSource() == openButton) {
+            if (selectedTabIndex == 0) {
+                open(depositTable);
+            } else if (selectedTabIndex == 1) {
+                open(depositTableTwo);
+            } else if (selectedTabIndex == 2) {
+                open(depositTableThree);
+            }
+        }
+    }
+
+    private void add(JTable table, DefaultTableModel tableMode) {
+        int selectedRow = table.getSelectedRow();
+        int rowToInsert = selectedRow == -1 ? tableMode.getRowCount() : selectedRow + 1;
+        tableMode.insertRow(rowToInsert, new Object[]{rowToInsert + 1, ""});
+        rowCount++;
+        updateRowNumbers(tableMode);
+    }
+    private void updateRowNumbers(DefaultTableModel tableModel) {
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            tableModel.setValueAt(i + 1, i, 0);
+        }
+    }
+    private void delete(JTable table, DefaultTableModel tableMode) {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow != -1) {
+            tableMode.removeRow(selectedRow);
+            updateRowNumbers(tableMode);
+        }
+    }
+    private void saveTableModelToLogFile(DefaultTableModel tableModel, File logFile) {
+        try (FileWriter writer = new FileWriter(logFile)) {
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                String row = "";
+                for (int j = 0; j < tableModel.getColumnCount(); j++) {
+                    row += tableModel.getValueAt(i, j) + ",";
+                }
+                row = row.substring(0, row.length() - 1);
+                writer.write(row + "\n");
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+    private void copy(JTable table, DefaultTableModel tableModel) {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow != -1) {
+            String content = (String) tableModel.getValueAt(selectedRow, 2);
+            copyToClipboard(content);
+        }
+    }
+    private void open(JTable table) {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow != -1) {
+            String selectedURL = (String) table.getValueAt(selectedRow, 2);
+            openURL(selectedURL);
+        }
+    }
+    private void openURL(String url) {
+        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+            try {
+                Desktop.getDesktop().browse(new URI(url));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+
     void buttons() {
         depositTable.addMouseListener(new MouseAdapter() {
             @Override
@@ -191,32 +293,76 @@ public class depositGUI extends JFrame implements ActionListener {
                     JPopupMenu menu = new JPopupMenu();
                     JMenuItem copyItem = new JMenuItem("Copy");
                     JMenuItem openItem = new JMenuItem("Open");
-
-                    int selectedRow = depositTable.getSelectedRow();
-                    Object selectedPath = depositTable.getValueAt(selectedRow, 2);
-
                     // add action listeners to the menu items
                     copyItem.addActionListener(new ActionListener() {
                         @Override
                         public void actionPerformed(ActionEvent e) {
-                            copyToClipboard(selectedPath.toString());
+                            copy(depositTable, depositTableModel);
                         }
                     });
                     openItem.addActionListener(new ActionListener() {
                         @Override
                         public void actionPerformed(ActionEvent e) {
-                            try {
-                                Desktop desktop = Desktop.getDesktop();
-                                URI uri = new URI(selectedPath.toString());
-                                desktop.browse(uri);
-                            } catch (Exception ex) {
-                                ex.printStackTrace();
-                            }
+                            open(depositTable);
                         }
                     });
                     menu.add(copyItem);
                     menu.add(openItem);
                     menu.show(depositTable, e.getX(), e.getY());
+                }
+            }
+        });
+        depositTableTwo.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    // create and show the JPopupMenu
+                    JPopupMenu menu = new JPopupMenu();
+                    JMenuItem copyItem = new JMenuItem("Copy");
+                    JMenuItem openItem = new JMenuItem("Open");
+                    // add action listeners to the menu items
+                    copyItem.addActionListener(new ActionListener() {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            copy(depositTableTwo, depositTableModelTwo);
+                        }
+                    });
+                    openItem.addActionListener(new ActionListener() {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            open(depositTableTwo);
+                        }
+                    });
+                    menu.add(copyItem);
+                    menu.add(openItem);
+                    menu.show(depositTableTwo, e.getX(), e.getY());
+                }
+            }
+        });
+        depositTableThree.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    // create and show the JPopupMenu
+                    JPopupMenu menu = new JPopupMenu();
+                    JMenuItem copyItem = new JMenuItem("Copy");
+                    JMenuItem openItem = new JMenuItem("Open");
+                    // add action listeners to the menu items
+                    copyItem.addActionListener(new ActionListener() {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            copy(depositTableThree, depositTableModelThree);
+                        }
+                    });
+                    openItem.addActionListener(new ActionListener() {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            open(depositTableThree);
+                        }
+                    });
+                    menu.add(copyItem);
+                    menu.add(openItem);
+                    menu.show(depositTableThree, e.getX(), e.getY());
                 }
             }
         });
@@ -240,15 +386,5 @@ public class depositGUI extends JFrame implements ActionListener {
                 throw new RuntimeException(e);
             }
         }
-    }
-    private int getNextNumber() {
-        int nextNumber = 1;
-        for (int i = 0; i < depositTableModel.getRowCount(); i++) {
-            int currentNumber = Integer.parseInt(depositTableModel.getValueAt(i, 0).toString());
-            if (currentNumber >= nextNumber) {
-                nextNumber = currentNumber + 1;
-            }
-        }
-        return nextNumber;
     }
 }
