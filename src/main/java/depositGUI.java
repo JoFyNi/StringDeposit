@@ -96,7 +96,7 @@ public class depositGUI extends JFrame implements ActionListener {
         buttonPanel.add(Box.createHorizontalGlue());
         buttonPanel.add(openButton);
         depositPanel.add(buttonPanel, BorderLayout.SOUTH);
-
+        // link to the actionPerformance
         addButton.addActionListener(this);
         saveButton.addActionListener(this);
         deleteButton.addActionListener(this);
