@@ -9,9 +9,12 @@ import java.awt.event.MouseEvent;
 import java.io.*;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.List;
 
 public class depositGUI extends JFrame implements ActionListener {
+    Icon Icon = new ImageIcon("DEPO_ICON.png");
     public JPanel depositPanel;
+    public List<JPanel> tabPanels;
     public JTabbedPane tabbedPane;
     public JTable depositTable;
     public JTable depositTableTwo;
@@ -24,9 +27,12 @@ public class depositGUI extends JFrame implements ActionListener {
     public JButton deleteButton;
     public JButton copyButton;
     public JButton openButton;
+    public JButton addTabButton;
+    public JButton deleteTabButton;
     public File logFileOne = new File("log1.txt");
     public File logFileTwo = new File("log2.txt");
     public File logFileThree = new File("log3.txt");
+    public File tabsFile = new File("tabLog.txt");
     static Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
     private int rowCount = 0;
     String version = System.getProperty("java.version");
@@ -37,6 +43,13 @@ public class depositGUI extends JFrame implements ActionListener {
         depositPanel = new JPanel();
         depositPanel.setPreferredSize(new Dimension(640, 400));
         depositPanel.setLayout(new BorderLayout());
+
+        // Create the list to hold the tab panels
+        tabPanels = new ArrayList<JPanel>();
+
+        // Create the tabbed pane
+        tabbedPane = new JTabbedPane();
+
         getContentPane().add(depositPanel, BorderLayout.CENTER);
         depositTableModel = new DefaultTableModel() {
             @Override
@@ -121,6 +134,8 @@ public class depositGUI extends JFrame implements ActionListener {
         depositPanel.add(tabbedPane);
         // buttons
         addButton = new JButton("Add");
+        addTabButton = new JButton("Add Tab");
+        deleteTabButton = new JButton("Delete Tab");
         saveButton = new JButton("Save");
         deleteButton = new JButton("Delete");
         copyButton = new JButton("Copy");
@@ -130,9 +145,13 @@ public class depositGUI extends JFrame implements ActionListener {
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.LINE_AXIS));
         buttonPanel.add(addButton);
         buttonPanel.add(Box.createHorizontalGlue());
+        buttonPanel.add(addTabButton);
+        buttonPanel.add(Box.createHorizontalGlue());
         buttonPanel.add(saveButton);
         buttonPanel.add(Box.createHorizontalGlue());
         buttonPanel.add(deleteButton);
+        buttonPanel.add(Box.createHorizontalGlue());
+        buttonPanel.add(deleteTabButton);
         buttonPanel.add(Box.createHorizontalGlue());
         buttonPanel.add(copyButton);
         buttonPanel.add(Box.createHorizontalGlue());
@@ -140,8 +159,10 @@ public class depositGUI extends JFrame implements ActionListener {
         depositPanel.add(buttonPanel, BorderLayout.SOUTH);
         // link to the actionPerformance
         addButton.addActionListener(this);
+        addTabButton.addActionListener(this);
         saveButton.addActionListener(this);
         deleteButton.addActionListener(this);
+        deleteTabButton.addActionListener(this);
         copyButton.addActionListener(this);
         openButton.addActionListener(this);
         // designe for the frame
@@ -185,6 +206,65 @@ public class depositGUI extends JFrame implements ActionListener {
             }
         }
     }
+    private String getNewTabName() {
+        String tabName = JOptionPane.showInputDialog(depositGUI.this, "Enter a name for the new tab:", "New Tab", JOptionPane.PLAIN_MESSAGE);
+        if (tabName == null || tabName.isEmpty()) {
+            return null;
+        }
+        return tabName;
+    }
+
+    private void addNewTab() {
+        String tabName = getNewTabName();
+        if (tabName != null) {
+
+            saveTabs();
+        }
+    }
+
+    private void removeCurrentTab() {
+        int index = tabbedPane.getSelectedIndex();
+        if (index != -1) {
+            tabbedPane.removeTabAt(index);
+            saveTabs();
+        }
+    }
+
+    private void saveTabs() {
+        try {
+            FileWriter writer = new FileWriter(tabsFile);
+            int tabCount = tabbedPane.getTabCount();
+            for (int i = 0; i < tabCount; i++) {
+                Component component = tabbedPane.getComponentAt(i);
+                String title = tabbedPane.getTitleAt(i);
+                String content = ((JTextArea) ((JScrollPane) component).getViewport().getView()).getText();
+                writer.write(title + "\t" + content + "\n");
+            }
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadTabs() {
+        if (tabsFile.exists()) {
+            try {
+                BufferedReader reader = new BufferedReader(new FileReader(tabsFile));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] parts = line.split("\t", 2);
+                    String title = parts[0];
+                    String content = parts[1];
+                    JTextArea textArea = new JTextArea(content);
+                    JScrollPane scrollPane = new JScrollPane(textArea);
+                    tabbedPane.addTab(title, scrollPane);
+                }
+                reader.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
     @Override
     public void actionPerformed(ActionEvent e) {
         int selectedTabIndex = tabbedPane.getSelectedIndex();
@@ -196,6 +276,10 @@ public class depositGUI extends JFrame implements ActionListener {
             } else if (selectedTabIndex == 2) {
                 add(depositTableThree, depositTableModelThree);
             }
+        } else if (e.getSource() == addTabButton) {
+            int tabIndex = tabbedPane.getTabCount();
+            String tabName = "Tab " + (tabIndex + 1);
+            tabbedPane.addTab(tabName, new JScrollPane(new JTable()));
         } else if (e.getSource() == saveButton) {
             saveTableModelToLogFile(depositTableModel, logFileOne);
             saveTableModelToLogFile(depositTableModelTwo, logFileTwo);
@@ -207,6 +291,10 @@ public class depositGUI extends JFrame implements ActionListener {
                 delete(depositTableTwo, depositTableModelTwo);
             } else if (selectedTabIndex == 2) {
                 delete(depositTableThree, depositTableModelThree);
+            }
+        } else if (e.getSource() == deleteTabButton) {
+            if (selectedTabIndex != -1) {
+                tabbedPane.removeTabAt(selectedTabIndex);
             }
         } else if (e.getSource() == copyButton) {
             if (selectedTabIndex == 0) {
