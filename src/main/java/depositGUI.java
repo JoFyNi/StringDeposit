@@ -22,15 +22,14 @@ public class depositGUI extends JFrame implements ActionListener {
     private static final String OPEN_BUTTON_TEXT = "Open";
     private static final String DIALOG_TITLE = "Enter a name for the new tab:";
     private static final String DEPO_ICON = "DEPO_ICON.png";
-    private static String LOG1_TXT = "log1.txt";
-    private static String LOG2_TXT = "log2.txt";
-    private static String LOG3_TXT = "log3.txt";
-    private static String TAB_LOG_TXT = "tabLog.txt";
+    private static final String LOG1_TXT = "log1.txt";
+    private static final String LOG2_TXT = "log2.txt";
+    private static final String LOG3_TXT = "log3.txt";
+    private static final String TAB_LOG_TXT = "tabLog.txt";
     private static final String[] COLUMNS = {"#", "Name", "Link"};
     private static final int TABLE_COLUMN_WIDTH = 150;
     private static final int TABLE_PREFERRED_WIDTH = 300;
 
-    private final JPanel depositPanel;
     private JTabbedPane tabbedPane;
     private final JButton addButton;
     private final JButton addTabButton;
@@ -54,7 +53,7 @@ public class depositGUI extends JFrame implements ActionListener {
         setTitle(APP_NAME + "   Version: " + version);
         setSize(640, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        depositPanel = new JPanel();
+        JPanel depositPanel = new JPanel();
         depositPanel.setPreferredSize(new Dimension(640, 400));
         depositPanel.setLayout(new BorderLayout());
 
