@@ -12,32 +12,46 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class depositGUI extends JFrame implements ActionListener {
-    Icon Icon = new ImageIcon("DEPO_ICON.png");
-    public JPanel depositPanel;
+    private static final String APP_NAME = "Depo";
+    private static final String ADD_BUTTON_TEXT = "Add";
+    private static final String ADD_TAB_BUTTON_TEXT = "Add Tab";
+    private static final String SAVE_BUTTON_TEXT = "Save";
+    private static final String DELETE_BUTTON_TEXT = "Delete";
+    private static final String DELETE_TAB_BUTTON_TEXT = "Delete Tab";
+    private static final String COPY_BUTTON_TEXT = "Copy";
+    private static final String OPEN_BUTTON_TEXT = "Open";
+    private static final String DIALOG_TITLE = "Enter a name for the new tab:";
+    private static final String DEPO_ICON = "DEPO_ICON.png";
+    private static String LOG1_TXT = "log1.txt";
+    private static String LOG2_TXT = "log2.txt";
+    private static String LOG3_TXT = "log3.txt";
+    private static String TAB_LOG_TXT = "tabLog.txt";
+    private static final String[] COLUMNS = {"#", "Name", "Link"};
+    private static final int TABLE_COLUMN_WIDTH = 150;
+    private static final int TABLE_PREFERRED_WIDTH = 300;
+
+    private final JPanel depositPanel;
+    private JTabbedPane tabbedPane;
+    private final JButton addButton;
+    private final JButton addTabButton;
+    private final JButton saveButton;
+    private final JButton deleteButton;
+    private final JButton deleteTabButton;
+    private final JButton copyButton;
+    private final JButton openButton;
+    private static final Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+
+    private int rowCount = 0;
+    private String version = System.getProperty("java.version");
     public List<JPanel> tabPanels;
-    public JTabbedPane tabbedPane;
     public JTable depositTable;
     public JTable depositTableTwo;
     public JTable depositTableThree;
     public DefaultTableModel depositTableModel;
     public DefaultTableModel depositTableModelTwo;
     public DefaultTableModel depositTableModelThree;
-    public JButton addButton;
-    public JButton saveButton;
-    public JButton deleteButton;
-    public JButton copyButton;
-    public JButton openButton;
-    public JButton addTabButton;
-    public JButton deleteTabButton;
-    public File logFileOne = new File("log1.txt");
-    public File logFileTwo = new File("log2.txt");
-    public File logFileThree = new File("log3.txt");
-    public File tabsFile = new File("tabLog.txt");
-    static Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-    private int rowCount = 0;
-    String version = System.getProperty("java.version");
     public depositGUI() {
-        setTitle("DEPO      Version: " + version);
+        setTitle(APP_NAME + "   Version: " + version);
         setSize(640, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         depositPanel = new JPanel();
@@ -71,13 +85,13 @@ public class depositGUI extends JFrame implements ActionListener {
         };
         // Thread safe initialization for safety tables checking
         Thread thread1 = new Thread(() -> {
-            loadTableModelFromFile(logFileOne, depositTableModel);
+            loadTableModelFromFile(new File(LOG1_TXT), depositTableModel);
         });
         Thread thread2 = new Thread(() -> {
-            loadTableModelFromFile(logFileTwo, depositTableModelTwo);
+            loadTableModelFromFile(new File(LOG2_TXT), depositTableModelTwo);
         });
         Thread thread3 = new Thread(() -> {
-            loadTableModelFromFile(logFileThree, depositTableModelThree);
+            loadTableModelFromFile(new File(LOG3_TXT), depositTableModelThree);
         });
         thread1.start();
         thread2.start();
@@ -133,26 +147,26 @@ public class depositGUI extends JFrame implements ActionListener {
         tabbedPane.addTab("Three", new JScrollPane(depositTableThree));
         depositPanel.add(tabbedPane);
         // buttons
-        addButton = new JButton("Add");
-        addTabButton = new JButton("Add Tab");
-        deleteTabButton = new JButton("Delete Tab");
-        saveButton = new JButton("Save");
-        deleteButton = new JButton("Delete");
-        copyButton = new JButton("Copy");
-        openButton = new JButton("Open");
+        addButton = new JButton(ADD_BUTTON_TEXT);
+        addTabButton = new JButton(ADD_TAB_BUTTON_TEXT);
+        deleteTabButton = new JButton(DELETE_TAB_BUTTON_TEXT);
+        saveButton = new JButton(SAVE_BUTTON_TEXT);
+        deleteButton = new JButton(DELETE_BUTTON_TEXT);
+        copyButton = new JButton(COPY_BUTTON_TEXT);
+        openButton = new JButton(OPEN_BUTTON_TEXT);
         // add section (add things to panels)
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.LINE_AXIS));
         buttonPanel.add(addButton);
         buttonPanel.add(Box.createHorizontalGlue());
-        buttonPanel.add(addTabButton);
-        buttonPanel.add(Box.createHorizontalGlue());
+        //buttonPanel.add(addTabButton);
+        //buttonPanel.add(Box.createHorizontalGlue());
         buttonPanel.add(saveButton);
         buttonPanel.add(Box.createHorizontalGlue());
         buttonPanel.add(deleteButton);
         buttonPanel.add(Box.createHorizontalGlue());
-        buttonPanel.add(deleteTabButton);
-        buttonPanel.add(Box.createHorizontalGlue());
+        //buttonPanel.add(deleteTabButton);
+        //buttonPanel.add(Box.createHorizontalGlue());
         buttonPanel.add(copyButton);
         buttonPanel.add(Box.createHorizontalGlue());
         buttonPanel.add(openButton);
@@ -172,13 +186,12 @@ public class depositGUI extends JFrame implements ActionListener {
         buttons();
     }
     public void loadTableModelFromFile(File logFile, DefaultTableModel tableModel) {
-        String[] columns = {"#", "Name", "Link"};
         Object[] newRow = {"1", "", ""};
         if (!logFile.exists()) {
             // If it doesn't, create an empty depositTableModel
             try {
                 logFile.createNewFile();
-                tableModel = new DefaultTableModel(columns, 0);
+                tableModel = new DefaultTableModel(COLUMNS, 0);
                 if (tableModel.getRowCount() == 0) {
                     tableModel.addRow(newRow);
                     rowCount++;
@@ -199,67 +212,8 @@ public class depositGUI extends JFrame implements ActionListener {
                 }
                 reader.close();
                 tableModel.addRow(newRow);
-                tableModel.setDataVector(dataList.toArray(new Object[0][0]), columns);
+                tableModel.setDataVector(dataList.toArray(new Object[0][0]), COLUMNS);
 
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-    private String getNewTabName() {
-        String tabName = JOptionPane.showInputDialog(depositGUI.this, "Enter a name for the new tab:", "New Tab", JOptionPane.PLAIN_MESSAGE);
-        if (tabName == null || tabName.isEmpty()) {
-            return null;
-        }
-        return tabName;
-    }
-
-    private void addNewTab() {
-        String tabName = getNewTabName();
-        if (tabName != null) {
-
-            saveTabs();
-        }
-    }
-
-    private void removeCurrentTab() {
-        int index = tabbedPane.getSelectedIndex();
-        if (index != -1) {
-            tabbedPane.removeTabAt(index);
-            saveTabs();
-        }
-    }
-
-    private void saveTabs() {
-        try {
-            FileWriter writer = new FileWriter(tabsFile);
-            int tabCount = tabbedPane.getTabCount();
-            for (int i = 0; i < tabCount; i++) {
-                Component component = tabbedPane.getComponentAt(i);
-                String title = tabbedPane.getTitleAt(i);
-                String content = ((JTextArea) ((JScrollPane) component).getViewport().getView()).getText();
-                writer.write(title + "\t" + content + "\n");
-            }
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void loadTabs() {
-        if (tabsFile.exists()) {
-            try {
-                BufferedReader reader = new BufferedReader(new FileReader(tabsFile));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] parts = line.split("\t", 2);
-                    String title = parts[0];
-                    String content = parts[1];
-                    JTextArea textArea = new JTextArea(content);
-                    JScrollPane scrollPane = new JScrollPane(textArea);
-                    tabbedPane.addTab(title, scrollPane);
-                }
-                reader.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -281,9 +235,9 @@ public class depositGUI extends JFrame implements ActionListener {
             String tabName = "Tab " + (tabIndex + 1);
             tabbedPane.addTab(tabName, new JScrollPane(new JTable()));
         } else if (e.getSource() == saveButton) {
-            saveTableModelToLogFile(depositTableModel, logFileOne);
-            saveTableModelToLogFile(depositTableModelTwo, logFileTwo);
-            saveTableModelToLogFile(depositTableModelThree, logFileThree);
+            saveTableModelToLogFile(depositTableModel, new File(LOG1_TXT));
+            saveTableModelToLogFile(depositTableModelTwo, new File(LOG2_TXT));
+            saveTableModelToLogFile(depositTableModelThree, new File(LOG3_TXT));
         } else if (e.getSource() == deleteButton) {
             if (selectedTabIndex == 0) {
                 delete(depositTable, depositTableModel);
@@ -379,8 +333,8 @@ public class depositGUI extends JFrame implements ActionListener {
                 if (SwingUtilities.isRightMouseButton(e)) {
                     // create and show the JPopupMenu
                     JPopupMenu menu = new JPopupMenu();
-                    JMenuItem copyItem = new JMenuItem("Copy");
-                    JMenuItem openItem = new JMenuItem("Open");
+                    JMenuItem copyItem = new JMenuItem(COPY_BUTTON_TEXT);
+                    JMenuItem openItem = new JMenuItem(OPEN_BUTTON_TEXT);
                     // add action listeners to the menu items
                     copyItem.addActionListener(new ActionListener() {
                         @Override
@@ -406,8 +360,8 @@ public class depositGUI extends JFrame implements ActionListener {
                 if (SwingUtilities.isRightMouseButton(e)) {
                     // create and show the JPopupMenu
                     JPopupMenu menu = new JPopupMenu();
-                    JMenuItem copyItem = new JMenuItem("Copy");
-                    JMenuItem openItem = new JMenuItem("Open");
+                    JMenuItem copyItem = new JMenuItem(COPY_BUTTON_TEXT);
+                    JMenuItem openItem = new JMenuItem(OPEN_BUTTON_TEXT);
                     // add action listeners to the menu items
                     copyItem.addActionListener(new ActionListener() {
                         @Override
