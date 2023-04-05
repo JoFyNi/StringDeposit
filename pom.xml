@@ -63,6 +63,13 @@
             <version>3.5.0</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>org.example</groupId>
+            <artifactId>Ausleihe</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/libs/FileFinder.jar</systemPath>
+        </dependency>
     </dependencies>
 
 

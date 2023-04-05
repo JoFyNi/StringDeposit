@@ -12,7 +12,7 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="StringDeposit" options="--add-modules java.desktop,java.datatransfer" />
+      <module name="StringDeposit" options="" />
     </option>
   </component>
 </project>

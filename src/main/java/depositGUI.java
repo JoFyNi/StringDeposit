@@ -7,7 +7,12 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,6 +54,9 @@ public class depositGUI extends JFrame implements ActionListener {
     public DefaultTableModel depositTableModel;
     public DefaultTableModel depositTableModelTwo;
     public DefaultTableModel depositTableModelThree;
+
+    public JToolBar toolBar;
+    public JButton fileFinderBtn;
     public depositGUI() {
         setTitle(APP_NAME + "   Version: " + version);
         setSize(640, 400);
@@ -67,19 +75,19 @@ public class depositGUI extends JFrame implements ActionListener {
         depositTableModel = new DefaultTableModel() {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column != 0; // allow editing only in columns 2
+                return column != 0; // allow editing only in columns 1 and 2
             }
         };
         depositTableModelTwo = new DefaultTableModel() {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column != 0; // allow editing only in columns 2
+                return column != 0; // allow editing only in columns 1 and 2
             }
         };
         depositTableModelThree = new DefaultTableModel() {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column != 0; // allow editing only in columns 2
+                return column != 0; // allow editing only in columns 1 and 2
             }
         };
         // Thread safe initialization for safety tables checking
@@ -111,10 +119,10 @@ public class depositGUI extends JFrame implements ActionListener {
         depositTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         depositTable.getColumnModel().getColumn(0).setWidth(20);
         depositTable.getColumnModel().getColumn(0).setPreferredWidth(20);
-        depositTable.getColumnModel().getColumn(1).setWidth(150);
-        depositTable.getColumnModel().getColumn(1).setPreferredWidth(300);
-        depositTable.getColumnModel().getColumn(2).setWidth(150);
-        depositTable.getColumnModel().getColumn(2).setPreferredWidth(300);
+        depositTable.getColumnModel().getColumn(1).setWidth(TABLE_COLUMN_WIDTH);
+        depositTable.getColumnModel().getColumn(1).setPreferredWidth(TABLE_PREFERRED_WIDTH);
+        depositTable.getColumnModel().getColumn(2).setWidth(TABLE_COLUMN_WIDTH);
+        depositTable.getColumnModel().getColumn(2).setPreferredWidth(TABLE_PREFERRED_WIDTH);
         //
         // second Table
         depositTableTwo = new JTable(depositTableModelTwo);
@@ -123,10 +131,10 @@ public class depositGUI extends JFrame implements ActionListener {
         depositTableTwo.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         depositTableTwo.getColumnModel().getColumn(0).setWidth(20);
         depositTableTwo.getColumnModel().getColumn(0).setPreferredWidth(20);
-        depositTableTwo.getColumnModel().getColumn(1).setWidth(150);
-        depositTableTwo.getColumnModel().getColumn(1).setPreferredWidth(300);
-        depositTableTwo.getColumnModel().getColumn(2).setWidth(150);
-        depositTableTwo.getColumnModel().getColumn(2).setPreferredWidth(300);
+        depositTableTwo.getColumnModel().getColumn(1).setWidth(TABLE_COLUMN_WIDTH);
+        depositTableTwo.getColumnModel().getColumn(1).setPreferredWidth(TABLE_PREFERRED_WIDTH);
+        depositTableTwo.getColumnModel().getColumn(2).setWidth(TABLE_COLUMN_WIDTH);
+        depositTableTwo.getColumnModel().getColumn(2).setPreferredWidth(TABLE_PREFERRED_WIDTH);
         //
         // third Table
         depositTableThree = new JTable(depositTableModelThree);
@@ -135,10 +143,10 @@ public class depositGUI extends JFrame implements ActionListener {
         depositTableThree.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         depositTableThree.getColumnModel().getColumn(0).setWidth(20);
         depositTableThree.getColumnModel().getColumn(0).setPreferredWidth(20);
-        depositTableThree.getColumnModel().getColumn(1).setWidth(150);
-        depositTableThree.getColumnModel().getColumn(1).setPreferredWidth(300);
-        depositTableThree.getColumnModel().getColumn(2).setWidth(150);
-        depositTableThree.getColumnModel().getColumn(2).setPreferredWidth(300);
+        depositTableThree.getColumnModel().getColumn(1).setWidth(TABLE_COLUMN_WIDTH);
+        depositTableThree.getColumnModel().getColumn(1).setPreferredWidth(TABLE_PREFERRED_WIDTH);
+        depositTableThree.getColumnModel().getColumn(2).setWidth(TABLE_COLUMN_WIDTH);
+        depositTableThree.getColumnModel().getColumn(2).setPreferredWidth(TABLE_PREFERRED_WIDTH);
         // add Table to Tab
         tabbedPane = new JTabbedPane();
         tabbedPane.addTab("One", new JScrollPane(depositTable));
@@ -178,6 +186,14 @@ public class depositGUI extends JFrame implements ActionListener {
         deleteTabButton.addActionListener(this);
         copyButton.addActionListener(this);
         openButton.addActionListener(this);
+        // ToolBar
+        toolBar = new JToolBar();
+        depositPanel.add(toolBar, BorderLayout.NORTH);
+        fileFinderBtn = new JButton("FileFinder");
+        toolBar.add(fileFinderBtn);
+        fileFinderBtn.addActionListener(this);
+        toolBar.setForeground(Color.WHITE);
+        toolBar.setFont(new Font("Serif", Font.PLAIN, 18));
         // designe for the frame
         getContentPane().setFont(new Font("Times New Roman", Font.PLAIN, 20));
         setLocationRelativeTo(null);
@@ -264,6 +280,22 @@ public class depositGUI extends JFrame implements ActionListener {
                 open(depositTableTwo);
             } else if (selectedTabIndex == 2) {
                 open(depositTableThree);
+            }
+        } else if (e.getSource() == fileFinderBtn) {
+            // Laden Sie die FileFinder-Klasse aus dem JAR-File
+            try {
+                URLClassLoader loader = new URLClassLoader(new URL[]{
+                        new File("libs/FileFinder.jar").toURI().toURL()
+                });
+                Class<?> fileFinderClass = loader.loadClass("componenten.Main");
+                // Erstellen Sie eine Instanz der FileFinder-Klasse
+                Object fileFinder = fileFinderClass.newInstance();
+                // Rufen Sie die main-Methode auf der FileFinder-Instanz auf
+                Method mainMethod = fileFinderClass.getMethod("main", String[].class);
+                mainMethod.invoke(fileFinder, new Object[]{new String[]{}});
+            } catch (ClassNotFoundException | MalformedURLException | InvocationTargetException |
+                     InstantiationException | IllegalAccessException | NoSuchMethodException error) {
+                throw new RuntimeException(error);
             }
         }
     }
