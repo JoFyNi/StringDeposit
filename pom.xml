@@ -42,7 +42,30 @@
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>C:\Users\j.nievelstein\Java\StringDeposit\out\artifacts\StringDeposit_jar\lib</outputDirectory>
+                            <outputDirectory>${project.build.directory}\StringDeposit\out\artifacts\StringDeposit_jar\lib</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.0</version>
+                <executions>
+                    <execution>
+                        <id>copy-tabs</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/tabs</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/java/tabs</directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
                         </configuration>
                     </execution>
                 </executions>
