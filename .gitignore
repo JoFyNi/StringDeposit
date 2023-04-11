@@ -1,2 +1,6 @@
 # Project exclude paths
 /target/
+/out/
+/out/artifacts/
+/out/artifacts/DEPO_jar/
+/out/artifacts/StringDepo_jar/

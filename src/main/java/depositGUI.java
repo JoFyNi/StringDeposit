@@ -30,7 +30,7 @@ public class depositGUI extends JFrame implements ActionListener {
     private static final String OPEN_BUTTON_TEXT = "Open";
     private static final String DIALOG_TITLE = "Enter a name for the new tab:";
     private static final String DEPO_ICON = "DEPO_ICON.png";
-    String pathToTabs = getClass().getResource("/tabs").getPath();
+    //String pathToTabs = getClass().getResource("/tabs").getPath();
     //     private final File tabFolder = new File(pathToTabs + "/");
     private static final File tabFolder = new File("src/main/java/tabs/");
     // Liste aller .txt-Dateien im Ordner
@@ -147,7 +147,7 @@ public class depositGUI extends JFrame implements ActionListener {
         toolBar = new JToolBar();
         depositPanel.add(toolBar, BorderLayout.NORTH);
         fileFinderBtn = new JButton("FileFinder");
-        createTabBtn = new JButton("New Tab");
+        createTabBtn = new JButton(ADD_TAB_BUTTON_TEXT);
         deleteTabButton = new JButton(DELETE_TAB_BUTTON_TEXT);
         toolBar.add(fileFinderBtn);
         toolBar.add(createTabBtn);
