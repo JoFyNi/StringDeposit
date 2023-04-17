@@ -88,12 +88,10 @@
         </dependency>
         <dependency>
             <groupId>org.example</groupId>
-            <artifactId>Ausleihe</artifactId>
+            <artifactId>FileFinder</artifactId>
             <version>1.0</version>
             <scope>system</scope>
             <systemPath>${project.basedir}/src/libs/FileFinder.jar</systemPath>
         </dependency>
     </dependencies>
-
-
 </project>
