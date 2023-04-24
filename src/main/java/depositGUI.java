@@ -2,6 +2,7 @@ package main.java;
 
 import javax.naming.spi.DirectoryManager;
 import javax.swing.*;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.datatransfer.*;
@@ -20,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimerTask;
 
 public class depositGUI extends JFrame implements ActionListener {
     private static final String APP_NAME = "DEPO";
@@ -156,6 +158,7 @@ public class depositGUI extends JFrame implements ActionListener {
         setLocationRelativeTo(null);
         setVisible(true);
         buttons();
+        autoSave();
     }
     public void loadFileList() {
         File logFolder = new File(LOG_FOLDER);
@@ -335,8 +338,7 @@ public class depositGUI extends JFrame implements ActionListener {
 
     private void saveTableModel(JTable table, DefaultTableModel tableModel) {
         String title = tabbedPane.getTitleAt(tabbedPane.getSelectedIndex());
-        String filename = title.replaceAll("\\s+", "_");
-        File logFile = new File(tabFolder.getAbsolutePath() + "/" + filename);
+        File logFile = new File(tabFolder.getAbsolutePath() + "/" + title);
         try (PrintWriter writer = new PrintWriter(logFile)) {
             for (int i = 0; i < tableModel.getRowCount(); i++) {
                 for (int j = 0; j < tableModel.getColumnCount(); j++) {
@@ -410,7 +412,7 @@ public class depositGUI extends JFrame implements ActionListener {
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     if (SwingUtilities.isRightMouseButton(e)) {
-                        // create and show the JPopupMenu
+                        //  create and show the JPopupMenu
                         JPopupMenu menu = new JPopupMenu();
                         JMenuItem copyItem = new JMenuItem(COPY_BUTTON_TEXT);
                         JMenuItem openItem = new JMenuItem(OPEN_BUTTON_TEXT);
@@ -454,5 +456,17 @@ public class depositGUI extends JFrame implements ActionListener {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    private void autoSave() {
+        Timer timer = new Timer(1000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JTable selectedTable = (JTable) ((JScrollPane) tabbedPane.getSelectedComponent()).getViewport().getView();
+                DefaultTableModel model = (DefaultTableModel) selectedTable.getModel();
+                saveTableModel(selectedTable, depositTableModel);
+            }
+        });
+        timer.start();
     }
 }
