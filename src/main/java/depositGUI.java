@@ -285,12 +285,6 @@ public class depositGUI extends JFrame implements ActionListener {
                         depositTableModel.addRow(newRow);
                         depositTableModel.setDataVector(dataList.toArray(new Object[0][0]), COLUMNS);
                         loadModel();
-                        /*
-                        createFile
-                        createTable(file); -> load Table
-                        createTableModel(file, table); -> load TableModel
-                        addTab(file, mewJScrollPne(table));
-                        */
                     }
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
@@ -463,7 +457,6 @@ public class depositGUI extends JFrame implements ActionListener {
             @Override
             public void actionPerformed(ActionEvent e) {
                 JTable selectedTable = (JTable) ((JScrollPane) tabbedPane.getSelectedComponent()).getViewport().getView();
-                DefaultTableModel model = (DefaultTableModel) selectedTable.getModel();
                 saveTableModel(selectedTable, depositTableModel);
             }
         });
