@@ -97,7 +97,7 @@ public class depositGUI extends JFrame implements ActionListener {
                 // Load the contents of the selected file into the table model
                 loadTableModelFromFile(selectedFile, depositTableModel);
                 // Set the table model for the JTable to display the contents of the selected file
-                JTable selectedTable = createTableFromTextFile(selectedFile); //(JTable) ((JScrollPane) tabbedPane.getSelectedComponent()).getViewport().getView();
+                JTable selectedTable = createTableFromTextFile(selectedFile);
                 selectedTable.setModel(depositTableModel);
                 saveTableModel(selectedTable, depositTableModel);
             } else {
@@ -256,7 +256,7 @@ public class depositGUI extends JFrame implements ActionListener {
                 throw new RuntimeException(error);
             }
         } else if (e.getSource() == createTabBtn) {
-            String m = JOptionPane.showInputDialog("Name you're new Tab");
+            String m = JOptionPane.showInputDialog(DIALOG_TITLE);
             File f = new File(tabFolder.getAbsolutePath() + "/" + m + ".txt");
             if (f.exists()) JOptionPane.showMessageDialog(null, "Tab already exists");
             else {

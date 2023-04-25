@@ -1,5 +1,15 @@
 # StringDeposit
 
-Table for saving links for later usage
+Clipboard table to save Browser links on individual tabs/ tables
 
-![image](https://user-images.githubusercontent.com/119298629/229506483-b85e3d12-cf47-4ba0-a576-bbce6ae18be1.png)
+![img.png](DEPO.png)
+- Generell look
+
+![img_1.png](addTab.png)
+- add Tab Button
+
+![img_2.png](deleteTab.png)
+- delete Tab Button
+
+![img_3.png](fileFinderExtension.png)
+- FileFinder extension
