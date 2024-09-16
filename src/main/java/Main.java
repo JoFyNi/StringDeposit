@@ -9,5 +9,5 @@ public class Main {
             }
         });
     }
-    public static void createGUI() {new depositGUI();}
+    public static void createGUI() {new depositGUIKopie();}
 }

@@ -6,60 +6,47 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.*;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URI;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
+import java.util.Properties;
 
-public class depositGUI extends JFrame implements ActionListener {
+public class depositGUITwo extends JFrame implements ActionListener {
     private static final String APP_NAME = "DEPO";
     private static final String ADD_BUTTON_TEXT = "Add";
-    private static final String ADD_TAB_BUTTON_TEXT = "Add Tab";
     private static final String SAVE_BUTTON_TEXT = "Save";
     private static final String DELETE_BUTTON_TEXT = "Delete";
-    private static final String DELETE_TAB_BUTTON_TEXT = "Delete Tab";
     private static final String COPY_BUTTON_TEXT = "Copy";
     private static final String OPEN_BUTTON_TEXT = "Open";
+    private static final String ADD_TAB_BUTTON_TEXT = "Add Tab";
+    private static final String DELETE_TAB_BUTTON_TEXT = "Delete Tab";
     private static final String DIALOG_TITLE = "Enter a name for the new tab:";
-    private static final String DEPO_ICON = "DEPO_ICON.png";
     private static final String LOG_FOLDER = "./Tabs/";
-    private static File tabFolder = new File(LOG_FOLDER);
-    // Liste aller .txt-Dateien im Ordner
-    private File[] listOfFiles = tabFolder.listFiles((dir, name) -> name.toLowerCase().endsWith(".txt"));
     private static final String[] COLUMNS = {"#", "Name", "Link"};
-    private static final int TABLE_COLUMN_WIDTH = 150;
-    private static final int TABLE_PREFERRED_WIDTH = 300;
 
     private JTabbedPane tabbedPane;
-    private final JButton addButton;
-    private final JButton saveButton;
-    private final JButton deleteButton;
-    private final JButton copyButton;
-    private final JButton openButton;
+    private JButton addButton;
+    private JButton saveButton;
+    private JButton deleteButton;
+    private JButton copyButton;
+    private JButton openButton;
     private static final Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-
-    private int rowCount = 0;
-    private String version = System.getProperty("java.version");
+    private File[] listOfFiles;
     public JTable depositTable;
     public DefaultTableModel depositTableModel;
 
-    public JToolBar toolBar;
-    public JButton fileFinderBtn;
-    public JButton createTabBtn;
-    private JButton deleteTabButton;
+    private JTextArea previewArea;
 
     public depositGUI() {
-        setTitle(APP_NAME + "   JDK: " + version);
-        setSize(640, 400);
+        setTitle(APP_NAME);
+        setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         JPanel depositPanel = new JPanel();
-        depositPanel.setPreferredSize(new Dimension(640, 400));
+        depositPanel.setPreferredSize(new Dimension(800, 600));
         depositPanel.setLayout(new BorderLayout());
-        // Create the tabbed pane
+
         tabbedPane = new JTabbedPane();
         getContentPane().add(depositPanel, BorderLayout.CENTER);
 
@@ -70,49 +57,40 @@ public class depositGUI extends JFrame implements ActionListener {
             }
         };
         loadFileList();
-        // TabbedPane mit Tabs für jede .txt-Datei befüllen
-        for (File file : listOfFiles) {
-            // Tab erstellen und Titel setzen
-            String tabTitle = file.getName();
-            JTable depositTable = createTableFromTextFile(file);
-            //new JTable(depositTableModel);
-            tabbedPane.addTab(tabTitle, new JScrollPane(depositTable));
-            loadTableModelFromFile(new File(file.getAbsolutePath()), depositTableModel);
-            depositTable.setModel(depositTableModel);
-            // AUTO_RESIZE_COLUMNS = off so that the table can be resized -> 20 / 400
-            depositTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        }
-        // add Table to Tab
-        depositPanel.add(tabbedPane);
 
-        // Add a listener to the tabbed pane to listen for tab selection events
+        for (File file : listOfFiles) {
+            String tabTitle = file.getName();
+            JTable depositTable = createTableFromINIFile(file);
+            tabbedPane.addTab(tabTitle, new JScrollPane(depositTable));
+            loadTableModelFromINI(file, depositTableModel);
+            depositTable.setModel(depositTableModel);
+        }
+        depositPanel.add(tabbedPane, BorderLayout.CENTER);
+
+        previewArea = new JTextArea();
+        previewArea.setEditable(false);
+        depositPanel.add(new JScrollPane(previewArea), BorderLayout.EAST);
+
         tabbedPane.addChangeListener(e -> {
             Component selectedComponent = tabbedPane.getSelectedComponent();
-            // Get the index of the selected tab
             int selectedIndex = tabbedPane.getSelectedIndex();
-            // Check if the index is within the bounds of the array
             if (selectedIndex >= 0 && selectedIndex < this.listOfFiles.length) {
                 File selectedFile = this.listOfFiles[selectedIndex];
-                // Get the file associated with the selected tab
-                // Load the contents of the selected file into the table model
-                loadTableModelFromFile(selectedFile, depositTableModel);
-                // Set the table model for the JTable to display the contents of the selected file
-                JTable selectedTable = createTableFromTextFile(selectedFile);
+                loadTableModelFromINI(selectedFile, depositTableModel);
+                JTable selectedTable = createTableFromINIFile(selectedFile);
                 selectedTable.setModel(depositTableModel);
                 saveTableModel(selectedTable, depositTableModel);
             } else {
-                // Handle the case where the selected index is invalid
                 System.err.println("Invalid tab index: " + selectedIndex);
             }
         });
 
-        // buttons
         addButton = new JButton(ADD_BUTTON_TEXT);
         saveButton = new JButton(SAVE_BUTTON_TEXT);
         deleteButton = new JButton(DELETE_BUTTON_TEXT);
         copyButton = new JButton(COPY_BUTTON_TEXT);
         openButton = new JButton(OPEN_BUTTON_TEXT);
-        // add section (add things to panels)
+
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.LINE_AXIS));
         buttonPanel.add(addButton);
@@ -125,33 +103,33 @@ public class depositGUI extends JFrame implements ActionListener {
         buttonPanel.add(Box.createHorizontalGlue());
         buttonPanel.add(openButton);
         depositPanel.add(buttonPanel, BorderLayout.SOUTH);
-        // link to the actionPerformance
+
         addButton.addActionListener(this);
         saveButton.addActionListener(this);
         deleteButton.addActionListener(this);
         copyButton.addActionListener(this);
         openButton.addActionListener(this);
-        // ToolBar
-        toolBar = new JToolBar();
-        depositPanel.add(toolBar, BorderLayout.NORTH);
-        fileFinderBtn = new JButton("FileFinder");
-        createTabBtn = new JButton(ADD_TAB_BUTTON_TEXT);
-        deleteTabButton = new JButton(DELETE_TAB_BUTTON_TEXT);
-        toolBar.add(fileFinderBtn);
-        toolBar.add(createTabBtn);
-        toolBar.add(deleteTabButton);
-        fileFinderBtn.addActionListener(this);
-        createTabBtn.addActionListener(this);
-        deleteTabButton.addActionListener(this);
-        toolBar.setForeground(Color.WHITE);
-        toolBar.setFont(new Font("Serif", Font.PLAIN, 18));
-        // designe for the frame
-        getContentPane().setFont(new Font("Times New Roman", Font.PLAIN, 20));
+
+        toolBar(depositPanel);
+
         setLocationRelativeTo(null);
         setVisible(true);
         buttons();
         autoSave();
     }
+
+    private void toolBar(JPanel depositPanel) {
+        JToolBar toolBar = new JToolBar();
+        JButton createTabBtn = new JButton(ADD_TAB_BUTTON_TEXT);
+        JButton deleteTabButton = new JButton(DELETE_TAB_BUTTON_TEXT);
+        toolBar.add(createTabBtn);
+        toolBar.add(deleteTabButton);
+        depositPanel.add(toolBar, BorderLayout.NORTH);
+
+        createTabBtn.addActionListener(this);
+        deleteTabButton.addActionListener(this);
+    }
+
     public void loadFileList() {
         File logFolder = new File(LOG_FOLDER);
         if (!logFolder.exists()) {
@@ -161,11 +139,12 @@ public class depositGUI extends JFrame implements ActionListener {
                 return;
             }
         }
-        File firstFile = new File(LOG_FOLDER, "General.txt");
+        listOfFiles = logFolder.listFiles((dir, name) -> name.toLowerCase().endsWith(".ini"));
         if (listOfFiles == null || listOfFiles.length == 0) {
             try {
+                File firstFile = new File(LOG_FOLDER, "General.ini");
                 boolean created = firstFile.createNewFile();
-                listOfFiles = firstFile.listFiles();
+                listOfFiles = new File[]{firstFile};
                 if (!created) {
                     System.err.println("Failed to create log file.");
                 }
@@ -174,171 +153,149 @@ public class depositGUI extends JFrame implements ActionListener {
             }
         }
     }
-    private JTable createTableFromTextFile(File file) {
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            String line = reader.readLine();
-            ArrayList<String[]> rows = new ArrayList<>();
-            while ((line = reader.readLine()) != null) {
-                String[] rowData = line.split(",");
-                rows.add(rowData);
-            }
 
-            DefaultTableModel model = new DefaultTableModel(rows.toArray(new Object[0][0]), COLUMNS);
-            loadModel();
-            return new JTable(model);
-        } catch (Exception e) {
+    private JTable createTableFromINIFile(File file) {
+        DefaultTableModel model = new DefaultTableModel(COLUMNS, 0);
+        if (file.length() == 0) {
+            initializeINIFile(file);
+        }
+        try (FileInputStream input = new FileInputStream(file)) {
+            Properties props = new Properties();
+            props.load(input);
+
+            int rowCount = 1;
+            while (true) {
+                String name = props.getProperty("name" + rowCount);
+                String link = props.getProperty("link" + rowCount);
+                if (name == null || link == null) {
+                    break;
+                }
+                model.addRow(new Object[]{rowCount, name, link});
+                rowCount++;
+            }
+        } catch (IOException e) {
             e.printStackTrace();
-            return null;
+        }
+        return new JTable(model);
+    }
+
+    public void loadTableModelFromINI(File file, DefaultTableModel tableModel) {
+        tableModel.setRowCount(0); // Clear the existing rows
+        if (file.length() == 0) {
+            initializeINIFile(file);
+        }
+        try (FileInputStream input = new FileInputStream(file)) {
+            Properties props = new Properties();
+            props.load(input);
+
+            int rowCount = 1;
+            while (true) {
+                String name = props.getProperty("name" + rowCount);
+                String link = props.getProperty("link" + rowCount);
+                if (name == null || link == null) {
+                    break;
+                }
+                tableModel.addRow(new Object[]{rowCount, name, link});
+                rowCount++;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
-    public void loadTableModelFromFile(File logFile, DefaultTableModel tableModel) {
-        Object[] newRow = {"1", "", ""};
-        if (!logFile.exists()) {
-            // If it doesn't, create an empty depositTableModel
-            try {
-                logFile.createNewFile();
-                tableModel = new DefaultTableModel(COLUMNS, 0);
-                if (tableModel.getRowCount() == 0) {
-                    tableModel.addRow(newRow);
-                    rowCount++;
-                    tableModel.fireTableDataChanged();
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        } else {
-            try {
-                // Step 3: Read the data from the log.txt file and create a new depositTableModel
-                BufferedReader reader = new BufferedReader(new FileReader(logFile));
-                String line;
-                ArrayList<String[]> dataList = new ArrayList<>();
-                while ((line = reader.readLine()) != null) {
-                    String[] rowData = line.split(",");
-                    dataList.add(rowData);
-                }
-                reader.close();
-                tableModel.addRow(newRow);
-                tableModel.setDataVector(dataList.toArray(new Object[0][0]), COLUMNS);
-                loadModel();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
         JTable selectedTable = (JTable) ((JScrollPane) tabbedPane.getSelectedComponent()).getViewport().getView();
-        if (e.getSource() == addButton) {
+        String actionCommand = e.getActionCommand();
+
+        if (actionCommand.equals(ADD_BUTTON_TEXT)) {
             add(selectedTable, depositTableModel);
-        } else if (e.getSource() == saveButton) {
+        } else if (actionCommand.equals(SAVE_BUTTON_TEXT)) {
             saveTableModel(selectedTable, depositTableModel);
-        } else if (e.getSource() == deleteButton) {
+        } else if (actionCommand.equals(DELETE_BUTTON_TEXT)) {
             delete(selectedTable, depositTableModel);
-        } else if (e.getSource() == copyButton) {
+        } else if (actionCommand.equals(COPY_BUTTON_TEXT)) {
             copy(selectedTable, depositTableModel);
-        } else if (e.getSource() == openButton) {
+        } else if (actionCommand.equals(OPEN_BUTTON_TEXT)) {
             open(selectedTable);
-        } else if (e.getSource() == fileFinderBtn) {
-            // Laden Sie die FileFinder-Klasse aus dem JAR-File
-            try {
-                URLClassLoader loader = new URLClassLoader(new URL[]{
-                        new File("libs/FileFinder.jar").toURI().toURL()
-                });
-                Class<?> fileFinderClass = loader.loadClass("componenten.Main");
-                // Erstellen Sie eine Instanz der FileFinder-Klasse
-                Object fileFinder = fileFinderClass.newInstance();
-                // Rufen Sie die main-Methode auf der FileFinder-Instanz auf
-                Method mainMethod = fileFinderClass.getMethod("main", String[].class);
-                mainMethod.invoke(fileFinder, new Object[]{new String[]{}});
-            } catch (ClassNotFoundException | MalformedURLException | InvocationTargetException |
-                     InstantiationException | IllegalAccessException | NoSuchMethodException error) {
-                throw new RuntimeException(error);
-            }
-        } else if (e.getSource() == createTabBtn) {
-            String m = JOptionPane.showInputDialog(DIALOG_TITLE);
-            File f = new File(tabFolder.getAbsolutePath() + "/" + m + ".txt");
-            if (f.exists()) JOptionPane.showMessageDialog(null, "Tab already exists");
-            else {
-                try {
-                    if (m != null) {
-                        f.createNewFile();
-                        listOfFiles = tabFolder.listFiles(); // aktualisiert listOfFiles
-                        tabbedPane.addTab(m, new JScrollPane(new JTable(depositTableModel)));
-                        loadTableModelFromFile(new File(f.getAbsolutePath()), depositTableModel);
-                        Object[] newRow = {"1", "", ""};
-                        BufferedReader reader = new BufferedReader(new FileReader(f));
-                        String line;
-                        ArrayList<String[]> dataList = new ArrayList<>();
-                        while ((line = reader.readLine()) != null) {
-                            String[] rowData = line.split(",");
-                            dataList.add(rowData);
-                        }
-                        depositTableModel.addRow(newRow);
-                        depositTableModel.setDataVector(dataList.toArray(new Object[0][0]), COLUMNS);
-                        loadModel();
-                    }
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-        } else if (e.getSource() == deleteTabButton) {
-            String tabName = JOptionPane.showInputDialog("Enter the Tab name you want to delete");
-            int tabCount = tabbedPane.getTabCount();
-            for (int i = 0; i < tabCount; i++) {
-                String title = tabbedPane.getTitleAt(i);
-                if (title.equals(tabName)) {
-                    tabbedPane.remove(i);
-                    // remove the file based on the tab that got selected by name
-                    File f = new File(tabFolder.getAbsolutePath() + "/" + tabName);
-                    if (f.exists()) f.delete();
-                    return;
-                }
-            }
-            JOptionPane.showMessageDialog(null, "Tab does not exist");
+        } else if (actionCommand.equals(ADD_TAB_BUTTON_TEXT)) {
+            createTab();
+        } else if (actionCommand.equals(DELETE_TAB_BUTTON_TEXT)) {
+            deleteTab();
         }
     }
-    private void add(JTable table, DefaultTableModel tableMode) {
+
+    private void createTab() {
+        String m = JOptionPane.showInputDialog(DIALOG_TITLE);
+        if (m == null || m.isEmpty()) return;
+        File f = new File(LOG_FOLDER + m + ".ini");
+        if (f.exists()) {
+            JOptionPane.showMessageDialog(null, "Tab already exists");
+        } else {
+            try {
+                f.createNewFile();
+                initializeINIFile(f);
+                listOfFiles = new File(LOG_FOLDER).listFiles((dir, name) -> name.toLowerCase().endsWith(".ini"));
+                DefaultTableModel newModel = new DefaultTableModel(COLUMNS, 0);
+                tabbedPane.addTab(m, new JScrollPane(new JTable(newModel)));
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+    }
+
+    private void deleteTab() {
+        int selectedIndex = tabbedPane.getSelectedIndex();
+        if (selectedIndex != -1) {
+            String title = tabbedPane.getTitleAt(selectedIndex);
+            tabbedPane.remove(selectedIndex);
+            File f = new File(LOG_FOLDER + title);
+            if (f.exists()) f.delete();
+        } else {
+            JOptionPane.showMessageDialog(null, "No tab selected");
+        }
+    }
+
+    private void add(JTable table, DefaultTableModel tableModel) {
+        int rowToInsert = tableModel.getRowCount(); // Neue Zeile immer am Ende hinzufügen
+        tableModel.addRow(new Object[]{rowToInsert + 1, "", ""}); // Füge eine neue Zeile hinzu
+        updateRowNumbers(tableModel); // Zeilennummern aktualisieren
+    }
+
+    private void delete(JTable table, DefaultTableModel tableModel) {
         int selectedRow = table.getSelectedRow();
-        int rowToInsert = selectedRow == -1 ? tableMode.getRowCount() : selectedRow + 1;
-        tableMode.insertRow(rowToInsert, new Object[]{rowToInsert + 1, ""});
-        rowCount++;
-        updateRowNumbers(tableMode);
-        saveTableModel(table, tableMode);
+        if (selectedRow != -1) {
+            tableModel.removeRow(selectedRow);
+            updateRowNumbers(tableModel);
+        }
     }
 
     private void updateRowNumbers(DefaultTableModel tableModel) {
-        for (int i = 0; i < tableModel.getRowCount(); i++) {
+        int rowCount = tableModel.getRowCount();
+        for (int i = 0; i < rowCount; i++) {
             tableModel.setValueAt(i + 1, i, 0);
         }
     }
 
-    private void delete(JTable table, DefaultTableModel tableMode) {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            tableMode.removeRow(selectedRow);
-            updateRowNumbers(tableMode);
-            saveTableModel(table, tableMode);
-        }
-    }
-
     private void saveTableModel(JTable table, DefaultTableModel tableModel) {
-        String title = tabbedPane.getTitleAt(tabbedPane.getSelectedIndex());
-        File logFile = new File(tabFolder.getAbsolutePath() + "/" + title);
-        try (PrintWriter writer = new PrintWriter(logFile)) {
-            for (int i = 0; i < tableModel.getRowCount(); i++) {
-                for (int j = 0; j < tableModel.getColumnCount(); j++) {
-                    writer.print(tableModel.getValueAt(i, j));
-                    if (j < tableModel.getColumnCount() - 1) {
-                        writer.print(",");
-                    }
-                }
-                writer.println();
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace();
+        if (tableModel.getRowCount() == 0) {
+            return; // Keine Zeilen, also nichts zu speichern
         }
-        loadModel();
+
+        String title = tabbedPane.getTitleAt(tabbedPane.getSelectedIndex());
+        File iniFile = new File(LOG_FOLDER + title);
+        try (FileOutputStream output = new FileOutputStream(iniFile)) {
+            Properties props = new Properties();
+
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                props.setProperty("name" + (i + 1), tableModel.getValueAt(i, 1).toString());
+                props.setProperty("link" + (i + 1), tableModel.getValueAt(i, 2).toString());
+            }
+
+            props.store(output, null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void copy(JTable table, DefaultTableModel tableModel) {
@@ -348,6 +305,7 @@ public class depositGUI extends JFrame implements ActionListener {
             copyToClipboard(content);
         }
     }
+
     private void open(JTable table) {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1) {
@@ -355,6 +313,7 @@ public class depositGUI extends JFrame implements ActionListener {
             openURL(selectedURL);
         }
     }
+
     private void openURL(String url) {
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
             try {
@@ -365,32 +324,7 @@ public class depositGUI extends JFrame implements ActionListener {
         }
     }
 
-    private void loadModel() {
-        Component selectedComponent = tabbedPane.getSelectedComponent();
-        if (selectedComponent instanceof JScrollPane) {
-            JScrollPane selectedScrollPane = (JScrollPane) selectedComponent;
-            JViewport viewport = selectedScrollPane.getViewport();
-            if (viewport != null) {
-                Component view = viewport.getView();
-                if (view instanceof JTable) {
-                    JTable selectedTable = (JTable) view;
-                    selectedTable.getColumnModel().getColumn(0).setWidth(20);
-                    selectedTable.getColumnModel().getColumn(0).setPreferredWidth(20);
-                    selectedTable.getColumnModel().getColumn(1).setWidth(TABLE_COLUMN_WIDTH);
-                    selectedTable.getColumnModel().getColumn(1).setPreferredWidth(TABLE_PREFERRED_WIDTH);
-                    selectedTable.getColumnModel().getColumn(2).setWidth(TABLE_COLUMN_WIDTH);
-                    selectedTable.getColumnModel().getColumn(2).setPreferredWidth(TABLE_PREFERRED_WIDTH);
-
-                    if (selectedTable == null) {
-                        selectedTable = new JTable();
-                    }
-                    selectedTable.setModel(depositTableModel);
-                }
-            }
-        }
-    }
-
-    void buttons() {
+    private void buttons() {
         int tabCount = tabbedPane.getTabCount();
         for (int i = 0; i < tabCount; i++) {
             JTable selectedTable = (JTable) ((JScrollPane) tabbedPane.getComponentAt(i)).getViewport().getView();
@@ -398,11 +332,10 @@ public class depositGUI extends JFrame implements ActionListener {
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     if (SwingUtilities.isRightMouseButton(e)) {
-                        //  create and show the JPopupMenu
                         JPopupMenu menu = new JPopupMenu();
                         JMenuItem copyItem = new JMenuItem(COPY_BUTTON_TEXT);
                         JMenuItem openItem = new JMenuItem(OPEN_BUTTON_TEXT);
-                        // add action listeners to the menu items
+
                         copyItem.addActionListener(new ActionListener() {
                             @Override
                             public void actionPerformed(ActionEvent e) {
@@ -418,40 +351,44 @@ public class depositGUI extends JFrame implements ActionListener {
                         menu.add(copyItem);
                         menu.add(openItem);
                         menu.show(selectedTable, e.getX(), e.getY());
+                    } else if (e.getClickCount() == 1 && e.getButton() == MouseEvent.BUTTON1) {
+                        int selectedRow = selectedTable.getSelectedRow();
+                        if (selectedRow != -1) {
+                            String previewText = "Name: " + selectedTable.getValueAt(selectedRow, 1) + "\nLink: " + selectedTable.getValueAt(selectedRow, 2);
+                            previewArea.setText(previewText);
+                        }
                     }
                 }
             });
         }
     }
+
     private static void copyToClipboard(String content) {
         StringSelection stringSelection = new StringSelection(content);
-        if (content.length() > 0) {
-            stringSelection = new StringSelection(content);
-        } else {
-            return;
-        }
-        // verschiebe content in clipboard
         clipboard.setContents(stringSelection, stringSelection);
-        // Ausgabe
-        Transferable transferable = clipboard.getContents(null);
-        if (transferable.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-            try {
-                String ausgabe = (String) transferable.getTransferData(DataFlavor.stringFlavor);
-                System.out.println(ausgabe);
-            } catch (UnsupportedFlavorException | IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     private void autoSave() {
-        Timer timer = new Timer(1000, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JTable selectedTable = (JTable) ((JScrollPane) tabbedPane.getSelectedComponent()).getViewport().getView();
+        Timer timer = new Timer(1000, e -> {
+            JTable selectedTable = (JTable) ((JScrollPane) tabbedPane.getSelectedComponent()).getViewport().getView();
+            if (selectedTable.getModel().getRowCount() > 0) {
                 saveTableModel(selectedTable, depositTableModel);
             }
         });
         timer.start();
+    }
+
+    private void initializeINIFile(File file) {
+        try (FileOutputStream output = new FileOutputStream(file)) {
+            Properties props = new Properties();
+            // Hier können grundlegende Einträge hinzugefügt werden, wenn nötig
+            props.store(output, null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(depositGUI::new);
     }
 }
