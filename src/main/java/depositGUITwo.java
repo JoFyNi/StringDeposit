@@ -39,7 +39,7 @@ public class depositGUITwo extends JFrame implements ActionListener {
 
     private JTextArea previewArea;
 
-    public depositGUI() {
+    public depositGUITwo() {
         setTitle(APP_NAME);
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
