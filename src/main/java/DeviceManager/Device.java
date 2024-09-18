@@ -16,5 +16,28 @@ public class Device {
     }
 
     public Device() {
+
+    }
+
+    public boolean getStatus() {
+        return status;
+    }
+    public String getStatusText() {
+        return status ? "Verfügbar" : "Nicht verfügbar";
+    }
+    public String getServiceTag() {
+        return ServiceTag;
+    }
+
+    public String getBenutzer() {
+        return user;
+    }
+
+    public String getStartDatum() {
+        return startDate;
+    }
+
+    public String getEndDatum() {
+        return endDate;
     }
 }
