@@ -53,9 +53,7 @@ public class Main extends Application {
         // Hinzufügen der Spalten zur Tabelle
         tableView.getColumns().addAll(statusCol, serviceTagCol, benutzerCol, startDateCol, endDateCol);
 
-        // deviceElementedaten aus 'list.txt' laden
         getDevices.setDevices(devices);
-
         // Generiere die XML-Datei aus den deviceElementen
         generateXML(devices);
 
@@ -63,31 +61,32 @@ public class Main extends Application {
         loadDevicesFromXML(tableView);
 
         // Buchungsbutton hinzufügen
-        Button bookButton = new Button("deviceElement Buchen");
+        Button bookButton = new Button("Buchen");
         bookButton.setOnAction(event -> {
             Device selectedDevice = tableView.getSelectionModel().getSelectedItem();
-            if (selectedDevice != null) {
-                System.out.println("Buchung von deviceElement: " + selectedDevice.getServiceTag());
-                // Weitere Buchungslogik hier hinzufügen
-
-                // ----------------------------------------------------------------------------------------------------------------
+            if (selectedDevice != null && selectedDevice.getStatus()) {
                 PopUp.buchen(selectedDevice.getServiceTag());
-                // öffnen eines GUI zur Buchung
-                // Email, start und end Date
-                // Abbruch -> löschen der informationen im GUI
-                // ok -> buchung bestätigen -> list.txt bearbeiten und informationen eintragen
+                reloadTableData(tableView);
+            }
+        });
+        Button returnButton = new Button("Rückgabe");
+        returnButton.setOnAction(event -> {
+            Device selectedDevice = tableView.getSelectionModel().getSelectedItem();
+            if (selectedDevice != null && !selectedDevice.getStatus()) {
+                ReturnPopUp.returnDevice(selectedDevice.getServiceTag());
+                reloadTableData(tableView);
             }
         });
 
         // Layout erstellen
-        HBox buttonBox = new HBox(bookButton);
+        HBox buttonBox = new HBox(bookButton, returnButton);
         root.setCenter(tableView);
         root.setBottom(buttonBox);
 
         // Szene erstellen und Fenster anzeigen
         Scene scene = new Scene(root, 800, 600);
         primaryStage.setScene(scene);
-        primaryStage.setTitle("deviceElementeverwaltung");
+        primaryStage.setTitle("Geräteverwaltung");
         primaryStage.show();
     }
 
@@ -104,7 +103,7 @@ public class Main extends Application {
             org.w3c.dom.Element rootElement = doc.createElement("deviceElementeverwaltung");
             doc.appendChild(rootElement);
 
-            // deviceElementedaten hinzufügen
+            // device hinzufügen
             for (Device device : devices) {
                 org.w3c.dom.Element deviceElement = doc.createElement("deviceElement");
 
@@ -144,9 +143,8 @@ public class Main extends Application {
             e.printStackTrace();
         }
     }
-
     // ----------------------------------------------------------------------------------------------------------------
-    // Lädt die deviceElementedaten aus der XML-Datei in die Tabelle
+    // Lädt die device daten aus der XML-Datei in die Tabelle
     private void loadDevicesFromXML(TableView<Device> tableView) {
         try {
             File xmlFile = new File("devices.xml");
@@ -173,7 +171,13 @@ public class Main extends Application {
             e.printStackTrace();
         }
     }
-
+    // ----------------------------------------------------------------------------------------------------------------
+    // Refreshing
+    private void reloadTableData(TableView<Device> tableView) {
+        generateXML(devices);
+        tableView.getItems().clear();
+        loadDevicesFromXML(tableView);
+    }
     // ----------------------------------------------------------------------------------------------------------------
     // Startpunkt der Anwendung
     public static void main(String[] args) {

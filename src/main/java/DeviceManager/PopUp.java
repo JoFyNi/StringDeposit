@@ -56,7 +56,7 @@ public class PopUp {
         okBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (emailText == null || emailText.equals("E-Mail") || startDateSpinner == endDateSpinner) {
+                if (emailText.equals("") | emailText.equals("E-Mail") | startDateSpinner == endDateSpinner) {
                     popUpLabel.setText("Bitte alle Drei Felder ausfüllen!");
                 } else {
                     setNewDevice(serviceTag, emailText.getText(), startDateSpinner, endDateSpinner);

@@ -1,5 +1,5 @@
 false,9T2XB02,A.Nachname,14.09.2024,23.09.2024
 true,1WK99S3,none,none,none
-false,61SSM42,v.nachname,18.09.2024,25.09.2024
+true,61SSM42,none,none,none
 false,CPYSZF2,O.Nachname,01.09.2024,15.09.2024
-true,GFCHY32,none,none,none,
+true,GFCHY32,none,none,none
