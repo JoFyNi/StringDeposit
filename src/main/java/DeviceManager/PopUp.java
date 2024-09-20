@@ -56,11 +56,19 @@ public class PopUp {
         okBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (emailText.equals("") | emailText.equals("E-Mail") | startDateSpinner == endDateSpinner) {
+                if (emailText.getText().equals("") || emailText.getText().equals("E-Mail") || startDateSpinner.equals(endDateSpinner)) {
                     popUpLabel.setText("Bitte alle Drei Felder ausfüllen!");
                 } else {
-                    setNewDevice(serviceTag, emailText.getText(), startDateSpinner, endDateSpinner);
-                    popUp.dispose();
+                    String userName = getDevices.extractBeforeAt(emailText.getText());
+                    System.out.println("Extrahierter Username: " + userName);
+                    boolean userFound = UserCompare.compareFolderName(userName);
+
+                    if (userFound) {
+                        setNewDevice(serviceTag, emailText.getText(), startDateSpinner, endDateSpinner);
+                        popUp.dispose();
+                    } else {
+                        popUpLabel.setText("E-Mail nicht gefunden!");
+                    }
                 }
             }
         });

@@ -7,10 +7,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class getDevices {
-    public static File ListFile = new File("C:\\Users\\j.nievelstein\\Java\\StringDeposit\\src\\main\\java\\DeviceManager\\list.txt");
+import static DeviceManager.config.ListPath;
 
+public class getDevices {
+    public static File ListFile = new File(ListPath);
     public static void setDevices(List<Device> devices) {
+        devices.clear();
         String line = "";
         String SplitBy = ",";
         try (BufferedReader reader = new BufferedReader(new FileReader(ListFile))) {
@@ -179,9 +181,7 @@ public class getDevices {
             dataPending[i][2] = devices.get(i).getBenutzer();
             dataPending[i][3] = devices.get(i).getStartDatum();
             dataPending[i][4] = devices.get(i).getEndDatum();
-
         }
-
         for (Device device : devices) {
             System.out.println("Status: " + device.getStatus());
             System.out.println("Service Tag: " + device.getServiceTag());

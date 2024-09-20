@@ -20,9 +20,12 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
+import java.nio.file.*;
 import java.util.List;
 
+import static DeviceManager.config.KinPath;
 import static DeviceManager.init.devices;
+
 
 public class Main extends Application {
 
@@ -54,10 +57,7 @@ public class Main extends Application {
         tableView.getColumns().addAll(statusCol, serviceTagCol, benutzerCol, startDateCol, endDateCol);
 
         getDevices.setDevices(devices);
-        // Generiere die XML-Datei aus den deviceElementen
         generateXML(devices);
-
-        // XML-Daten in die Tabelle laden
         loadDevicesFromXML(tableView);
 
         // Buchungsbutton hinzufügen
@@ -66,7 +66,6 @@ public class Main extends Application {
             Device selectedDevice = tableView.getSelectionModel().getSelectedItem();
             if (selectedDevice != null && selectedDevice.getStatus()) {
                 PopUp.buchen(selectedDevice.getServiceTag());
-                reloadTableData(tableView);
             }
         });
         Button returnButton = new Button("Rückgabe");
@@ -74,25 +73,30 @@ public class Main extends Application {
             Device selectedDevice = tableView.getSelectionModel().getSelectedItem();
             if (selectedDevice != null && !selectedDevice.getStatus()) {
                 ReturnPopUp.returnDevice(selectedDevice.getServiceTag());
-                reloadTableData(tableView);
             }
         });
 
-        // Layout erstellen
         HBox buttonBox = new HBox(bookButton, returnButton);
         root.setCenter(tableView);
         root.setBottom(buttonBox);
 
-        // Szene erstellen und Fenster anzeigen
         Scene scene = new Scene(root, 800, 600);
         primaryStage.setScene(scene);
         primaryStage.setTitle("Geräteverwaltung");
         primaryStage.show();
+
+        new Thread(() -> {
+            try {
+                watchForChanges(tableView);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }).start();
     }
 
     // ----------------------------------------------------------------------------------------------------------------
     // Generiert eine XML-Datei basierend auf der Liste der deviceElemente
-    private void generateXML(List<Device> devices) {
+    private void generateXML(List<Device> devicesXML) {
         try {
             // Erstelle ein XML-Dokument
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -103,8 +107,7 @@ public class Main extends Application {
             org.w3c.dom.Element rootElement = doc.createElement("deviceElementeverwaltung");
             doc.appendChild(rootElement);
 
-            // device hinzufügen
-            for (Device device : devices) {
+            for (Device device : devicesXML) {
                 org.w3c.dom.Element deviceElement = doc.createElement("deviceElement");
 
                 org.w3c.dom.Element status = doc.createElement("Status");
@@ -147,16 +150,32 @@ public class Main extends Application {
     // Lädt die device daten aus der XML-Datei in die Tabelle
     private void loadDevicesFromXML(TableView<Device> tableView) {
         try {
+            // Sicherstellen, dass die aktuellste Version der XML-Datei geladen wird
             File xmlFile = new File("devices.xml");
+            if (!xmlFile.exists()) {
+                System.out.println("XML-Datei 'devices.xml' existiert nicht.");
+                return;
+            }
+
+            // Reset the DocumentBuilder to avoid any cache issues
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
+
+            // Neu einlesen und parsen
             Document doc = builder.parse(xmlFile);
+            doc.getDocumentElement().normalize();
 
             NodeList deviceList = doc.getElementsByTagName("deviceElement");
 
+            if (deviceList == null || deviceList.getLength() == 0) {
+                System.out.println("Keine Geräte zum Laden.");
+                return;
+            }
+
+            // Tabelle füllen
             for (int i = 0; i < deviceList.getLength(); i++) {
                 String statusText = doc.getElementsByTagName("Status").item(i).getTextContent();
-                boolean status = statusText.equalsIgnoreCase("Verfügbar");  // Status korrekt zuweisen
+                boolean status = statusText.equalsIgnoreCase("Verfügbar");
 
                 String serviceTag = doc.getElementsByTagName("ServiceTag").item(i).getTextContent();
                 String benutzer = doc.getElementsByTagName("Benutzer").item(i).getTextContent();
@@ -171,13 +190,35 @@ public class Main extends Application {
             e.printStackTrace();
         }
     }
+
+
+    // WatchService für Dateiänderungen
+    private void watchForChanges(TableView<Device> tableView) throws Exception {
+        Path path = Paths.get(KinPath);
+        WatchService watchService = FileSystems.getDefault().newWatchService();
+        path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
+
+        while (true) {
+            WatchKey key = watchService.take();
+            for (WatchEvent<?> event : key.pollEvents()) {
+                if (event.context().toString().equals("list.txt")) {
+                    System.out.println("list.txt wurde geändert, Tabelle wird aktualisiert.");
+                    reloadTableData(tableView);
+                }
+            }
+            key.reset();
+        }
+    }
     // ----------------------------------------------------------------------------------------------------------------
-    // Refreshing
     private void reloadTableData(TableView<Device> tableView) {
+        getDevices.setDevices(devices);
         generateXML(devices);
         tableView.getItems().clear();
         loadDevicesFromXML(tableView);
+        tableView.refresh();
     }
+
+
     // ----------------------------------------------------------------------------------------------------------------
     // Startpunkt der Anwendung
     public static void main(String[] args) {

@@ -43,8 +43,17 @@ public class ReturnPopUp {
             if (emailText.equals("") | emailText.equals("E-Mail")) {
                 returnPopUpLabel.setText("Bitte Feld ausfüllen!");
             } else {
-                getDevices.resetDevice(serviceTag);
-                returnPopUp.dispose();
+                String userName = getDevices.extractBeforeAt(emailText.getText());
+                System.out.println("Extrahierter Username: " + userName);
+                boolean userFound = UserCompare.compareFolderName(userName);
+
+                if (userFound) {
+                    getDevices.resetDevice(serviceTag);
+                    returnPopUp.dispose();
+                } else {
+                    returnPopUpLabel.setText("E-Mail nicht gefunden!");
+                }
+
             }
         }
     });
