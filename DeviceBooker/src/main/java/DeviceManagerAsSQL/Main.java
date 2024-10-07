@@ -1,4 +1,4 @@
-package DeviceManager;
+package DeviceManagerAsSQL;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -20,14 +20,15 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.nio.file.*;
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
-import static DeviceManager.config.KinPath;
-import static DeviceManager.config.ListPath;
-import static DeviceManager.init.devices;
+import static DeviceManagerAsSQL.config.*;
 
 
 public class Main extends Application {
+    List<Device> devicesFromDB = getDevicesFromDatabase();
 
     @Override
     public void start(Stage primaryStage) {
@@ -56,9 +57,13 @@ public class Main extends Application {
         // Hinzufügen der Spalten zur Tabelle
         tableView.getColumns().addAll(statusCol, serviceTagCol, benutzerCol, startDateCol, endDateCol);
 
-        getDevices.setDevices(devices);
-        generateXML(devices);
-        loadDevicesFromXML(tableView);
+        ////////////////////////////////////////////////////////////////////////
+        // Neue Methode für das Abrufen der Geräte aus der Datenbank
+        tableView.getItems().addAll(devicesFromDB);
+        generateXML(devicesFromDB);
+        getDevices.setDevices(devicesFromDB);
+        //loadDevicesFromXML(tableView);
+        ////////////////////////////////////////////////////////////////////////
 
         // Buchungsbutton hinzufügen
         Button bookButton = new Button("Buchen");
@@ -138,6 +143,36 @@ public class Main extends Application {
             }
         }).start();
     }
+
+    // SQL
+    private List<Device> getDevicesFromDatabase() {
+        List<Device> devicesList = new ArrayList<>();
+        String query = "SELECT * FROM devices"; // SQL-Abfrage, um alle Geräte abzurufen
+
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver"); // Lade den MySQL JDBC-Treiber
+            Connection connection = DriverManager.getConnection(DB_URL, USERNAME, PASSWORD);
+
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(query);
+
+            while (resultSet.next()) {
+                String status = resultSet.getString("status");
+                String serviceTag = resultSet.getString("serviceTag");
+                String user = resultSet.getString("user");
+                String startDate = resultSet.getString("startDate");
+                String endDate = resultSet.getString("endDate");
+
+                boolean isActive = status.equalsIgnoreCase("Verfügbar");
+                devicesList.add(new Device(isActive, serviceTag, user, startDate, endDate));
+            }
+            connection.close(); // Verbindung schließen
+        } catch (ClassNotFoundException | SQLException e) {
+            e.printStackTrace();
+        }
+        return devicesList;
+    }
+
 
     // ----------------------------------------------------------------------------------------------------------------
     // Generiert eine XML-Datei basierend auf der Liste der deviceElemente
@@ -247,22 +282,24 @@ public class Main extends Application {
             WatchKey key = watchService.take();
             for (WatchEvent<?> event : key.pollEvents()) {
                 if (event.context().toString().equals(ListPath)) {
-                    System.out.println("list.txt wurde geändert, Tabelle wird aktualisiert.");
+                    System.out.println("DB wurde Aktualisiert, Tabelle wird aktualisiert.");
                     reloadTableData(tableView);
                 }
             }
             key.reset();
         }
     }
+
     // ----------------------------------------------------------------------------------------------------------------
     private void reloadTableData(TableView<Device> tableView) {
-        getDevices.setDevices(devices);
-        generateXML(devices);
+        // Neue Methode für das Abrufen der Geräte aus der Datenbank
+        tableView.getItems().addAll(devicesFromDB);
+        generateXML(devicesFromDB);
+
         tableView.getItems().clear();
         loadDevicesFromXML(tableView);
         tableView.refresh();
     }
-
 
     // ----------------------------------------------------------------------------------------------------------------
     // Startpunkt der Anwendung

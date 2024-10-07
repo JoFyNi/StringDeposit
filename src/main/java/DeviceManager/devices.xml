@@ -10,29 +10,29 @@
     <deviceElement>
         <Status>Verfügbar</Status>
         <ServiceTag>1WK99S3</ServiceTag>
-        <Benutzer>none</Benutzer>
-        <Startdatum>none</Startdatum>
-        <Enddatum>none</Enddatum>
+        <Benutzer>----</Benutzer>
+        <Startdatum>----</Startdatum>
+        <Enddatum>----</Enddatum>
     </deviceElement>
     <deviceElement>
         <Status>Verfügbar</Status>
         <ServiceTag>61SSM42</ServiceTag>
-        <Benutzer>none</Benutzer>
-        <Startdatum>none</Startdatum>
-        <Enddatum>none</Enddatum>
+        <Benutzer>----</Benutzer>
+        <Startdatum>----</Startdatum>
+        <Enddatum>----</Enddatum>
     </deviceElement>
     <deviceElement>
-        <Status>Nicht verfügbar</Status>
+        <Status>Verfügbar</Status>
         <ServiceTag>CPYSZF2</ServiceTag>
-        <Benutzer>O.Nachname</Benutzer>
-        <Startdatum>01.09.2024</Startdatum>
-        <Enddatum>15.09.2024</Enddatum>
+        <Benutzer>----</Benutzer>
+        <Startdatum>----</Startdatum>
+        <Enddatum>----</Enddatum>
     </deviceElement>
     <deviceElement>
         <Status>Verfügbar</Status>
         <ServiceTag>GFCHY32</ServiceTag>
-        <Benutzer>none</Benutzer>
-        <Startdatum>none</Startdatum>
-        <Enddatum>none</Enddatum>
+        <Benutzer>----</Benutzer>
+        <Startdatum>----</Startdatum>
+        <Enddatum>----</Enddatum>
     </deviceElement>
 </deviceElementeverwaltung>

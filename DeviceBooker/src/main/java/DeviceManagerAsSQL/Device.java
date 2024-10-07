@@ -1,4 +1,4 @@
-package DeviceManager;
+package DeviceManagerAsSQL;
 
 public class Device {
     public boolean status;
